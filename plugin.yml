@@ -1,0 +1,11 @@
+main: jdz.claimedSpawners.ClaimedSpawners
+name: ClaimedSpawners
+version: 1.0
+author: Jonodonozym
+description: Prevents spawners from being placed in unclaimed land
+depend: [JBU,FactionsUUID,FactionsFramework]
+
+permissions:
+  claimedspawners.bypass:
+    description: bypasses restrictions set by the plugin
+    default: op
