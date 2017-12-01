@@ -12,14 +12,16 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.massivecraft.factions.Board;
+import com.massivecraft.factions.FLocation;
+import com.massivecraft.factions.FPlayer;
+import com.massivecraft.factions.FPlayers;
+import com.massivecraft.factions.Faction;
+
 import jdz.bukkitUtils.fileIO.FileLogger;
 import jdz.bukkitUtils.misc.StringUtils;
 import jdz.bukkitUtils.misc.WorldUtils;
 import jdz.claimedSpawners.data.SpawnerDatabase;
-import me.markeh.factionsframework.entities.FPlayer;
-import me.markeh.factionsframework.entities.FPlayers;
-import me.markeh.factionsframework.entities.Faction;
-import me.markeh.factionsframework.entities.Factions;
 
 public class SpawnerPlaceListener implements Listener {
 	private final FileLogger spawnerPlaceLog;
@@ -33,12 +35,12 @@ public class SpawnerPlaceListener implements Listener {
 		
 		if (e.getBlock().getType() != Material.MOB_SPAWNER) return;
 		
-		if (!e.getPlayer().hasPermission("claimedSpawners.bypass")) {
+		FPlayer player = FPlayers.getInstance().getByPlayer(e.getPlayer()); 
+		Faction chunkFaction = Board.getInstance().getFactionAt(new FLocation(e.getBlock()));
 		
-			FPlayer player = FPlayers.getBySender(e.getPlayer());
-			Faction chunkFaction = Factions.getFactionAt(e.getBlock().getChunk());
+		if (!e.getPlayer().hasPermission("claimedSpawners.bypass")) {
 			
-			if (player.getFaction().isNone()) {
+			if (player.getFaction().isWilderness()) {
 				e.getPlayer().sendMessage(ChatColor.RED+"You need a faction to place spawners");
 				e.setCancelled(true);
 				return;
@@ -52,7 +54,7 @@ public class SpawnerPlaceListener implements Listener {
 		}
 			
 		logPlacement(e.getPlayer(), e.getBlock());
-		SpawnerDatabase.getInstance().addSpawner(e.getBlock().getLocation());
+		SpawnerDatabase.getInstance().addSpawner(chunkFaction.getId(), e.getBlock().getLocation());
 	}
 	
 	private void logPlacement(Player player, Block block) {

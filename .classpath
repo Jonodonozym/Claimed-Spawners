@@ -4,6 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="C:/Users/Jaiden/git/^^Libs/JBU.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Jaiden/git/^^Libs/spigot-1.12.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Jaiden/git/^^Libs/FactionsFramework.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Jaiden/git/^^Libs/Factions.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

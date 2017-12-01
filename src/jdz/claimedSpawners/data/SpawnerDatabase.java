@@ -25,7 +25,7 @@ public class SpawnerDatabase {
 	private static final SqlColumn[] tableColumns = new SqlColumn[] {
 			new SqlColumn("FactionID", SqlColumnType.STRING_128),
 			new SqlColumn("SpawnerLocation", SqlColumnType.STRING_128),
-			new SqlColumn("ChunkX", SqlColumnType.INT_4_BYTE), new SqlColumn("ChunkZ", SqlColumnType.INT_4_BYTE) };
+			new SqlColumn("ChunkX", SqlColumnType.LONG), new SqlColumn("ChunkZ", SqlColumnType.INT_4_BYTE) };
 
 	private SqlApi api = null;
 
@@ -49,12 +49,12 @@ public class SpawnerDatabase {
 				+ WorldUtils.locationToString(location) + "'");
 	}
 
-	public void setChunkFaction(String factionID, int chunkX, int chunkY) {
+	public void setChunkFaction(String factionID, long chunkX, long chunkY) {
 		api.executeUpdateAsync("UPDATE " + tableName + " SET factionID = '" + factionID + "' WHERE chunkX = "
 				+ chunkX + " AND chunkZ = " + chunkY + ";");
 	}
 	
-	public List<Block> getSpawnersIn(int chunkX, int chunkY){
+	public List<Block> getSpawnersIn(long chunkX, long chunkY){
 		List<Block> blocks = new ArrayList<Block>();
 		
 		List<String[]> rows = api.getRows("SELECT spawnerLocation FROM "+tableName+" WHERE chunkX = "+chunkX+" AND chunkZ = "+chunkY+";");
