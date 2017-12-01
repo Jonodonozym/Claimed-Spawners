@@ -13,8 +13,6 @@ import jdz.bukkitUtils.misc.WorldUtils;
 import jdz.bukkitUtils.sql.SqlApi;
 import jdz.bukkitUtils.sql.SqlColumn;
 import jdz.bukkitUtils.sql.SqlColumnType;
-import me.markeh.factionsframework.entities.Faction;
-import me.markeh.factionsframework.entities.Factions;
 
 public class SpawnerDatabase {
 	private static SpawnerDatabase instance;
@@ -39,12 +37,10 @@ public class SpawnerDatabase {
 		});
 	}
 
-	public void addSpawner(Location location) {
+	public void addSpawner(String factionID, Location location) {
 		Chunk chunk = location.getChunk();
-		Faction faction = Factions.getFactionAt(chunk);
-
 		api.executeUpdateAsync("INSERT INTO " + tableName + " " + "(factionID,spawnerLocation, chunkX, chunkZ) "
-				+ "VALUES('" + faction.getId() + "','" + WorldUtils.locationToString(location) + "'," + chunk.getX()
+				+ "VALUES('" + factionID + "','" + WorldUtils.locationToString(location) + "'," + chunk.getX()
 				+ "," + chunk.getZ() + ");");
 	}
 
@@ -53,15 +49,15 @@ public class SpawnerDatabase {
 				+ WorldUtils.locationToString(location) + "'");
 	}
 
-	public void setChunkFaction(Chunk chunk, Faction newOwner) {
-		api.executeUpdateAsync("UPDATE " + tableName + " SET factionID = '" + newOwner.getId() + "' WHERE chunkX = "
-				+ chunk.getX() + " AND chunkZ = " + chunk.getZ() + ";");
+	public void setChunkFaction(String factionID, int chunkX, int chunkY) {
+		api.executeUpdateAsync("UPDATE " + tableName + " SET factionID = '" + factionID + "' WHERE chunkX = "
+				+ chunkX + " AND chunkZ = " + chunkY + ";");
 	}
 	
-	public List<Block> getSpawnersIn(Chunk chunk){
+	public List<Block> getSpawnersIn(int chunkX, int chunkY){
 		List<Block> blocks = new ArrayList<Block>();
 		
-		List<String[]> rows = api.getRows("SELECT spawnerLocation FROM "+tableName+" WHERE chunkX = "+chunk.getX()+" AND chunkZ = "+chunk.getZ()+";");
+		List<String[]> rows = api.getRows("SELECT spawnerLocation FROM "+tableName+" WHERE chunkX = "+chunkX+" AND chunkZ = "+chunkY+";");
 		for (String[] row: rows) {
 			Location spawnerLocation = WorldUtils.locationFromString(row[0]);
 			blocks.add(spawnerLocation.getBlock());
@@ -70,10 +66,10 @@ public class SpawnerDatabase {
 		return blocks;
 	}
 	
-	public List<Block> getSpawners(Faction faction){
+	public List<Block> getSpawners(String factionID){
 		List<Block> blocks = new ArrayList<Block>();
 		
-		List<String[]> rows = api.getRows("SELECT spawnerLocation FROM "+tableName+" WHERE factionID = '"+faction.getId()+"';");
+		List<String[]> rows = api.getRows("SELECT spawnerLocation FROM "+tableName+" WHERE factionID = '"+factionID+"';");
 		for (String[] row: rows) {
 			Location spawnerLocation = WorldUtils.locationFromString(row[0]);
 			blocks.add(spawnerLocation.getBlock());
@@ -82,7 +78,7 @@ public class SpawnerDatabase {
 		return blocks;
 	}
 	
-	public void clearSpawnerData(Faction faction) {
-		api.executeUpdateAsync("DELETE FROM "+tableName+" WHERE factionID = '"+faction.getId()+"';");
+	public void clearSpawnerData(String factionID) {
+		api.executeUpdateAsync("DELETE FROM "+tableName+" WHERE factionID = '"+factionID+"';");
 	}
 }
