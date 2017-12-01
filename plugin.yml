@@ -3,7 +3,7 @@ name: ClaimedSpawners
 version: 1.0
 author: Jonodonozym
 description: Prevents spawners from being placed in unclaimed land
-depend: [JBU,FactionsUUID]
+depend: [JBU,Factions]
 
 permissions:
   claimedspawners.bypass:
