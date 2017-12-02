@@ -24,8 +24,8 @@ public class SpawnerDatabase {
 	private static final String tableName = "ClaimedSpawnersDatabase";
 	private static final SqlColumn[] tableColumns = new SqlColumn[] {
 			new SqlColumn("FactionID", SqlColumnType.STRING_128),
-			new SqlColumn("SpawnerLocation", SqlColumnType.STRING_128),
-			new SqlColumn("ChunkX", SqlColumnType.LONG), new SqlColumn("ChunkZ", SqlColumnType.INT_4_BYTE) };
+			new SqlColumn("SpawnerLocation", SqlColumnType.STRING_128), new SqlColumn("ChunkX", SqlColumnType.LONG),
+			new SqlColumn("ChunkZ", SqlColumnType.INT_4_BYTE) };
 
 	private SqlApi api = null;
 
@@ -39,9 +39,14 @@ public class SpawnerDatabase {
 
 	public void addSpawner(String factionID, Location location) {
 		Chunk chunk = location.getChunk();
-		api.executeUpdateAsync("INSERT INTO " + tableName + " " + "(factionID,spawnerLocation, chunkX, chunkZ) "
-				+ "VALUES('" + factionID + "','" + WorldUtils.locationToString(location) + "'," + chunk.getX()
-				+ "," + chunk.getZ() + ");");
+
+		String locationStr = WorldUtils.locationToString(location);
+
+		List<String[]> result = api
+				.getRows("SELECT factionID FROM " + tableName + " WHERE spawnerLocation = '" + locationStr + "';");
+		if (result.isEmpty())
+			api.executeUpdateAsync("INSERT INTO " + tableName + " " + "(factionID,spawnerLocation, chunkX, chunkZ) "
+					+ "VALUES('" + factionID + "','" + locationStr + "'," + chunk.getX() + "," + chunk.getZ() + ");");
 	}
 
 	public void removeSpawner(Location location) {
@@ -50,35 +55,37 @@ public class SpawnerDatabase {
 	}
 
 	public void setChunkFaction(String factionID, long chunkX, long chunkY) {
-		api.executeUpdateAsync("UPDATE " + tableName + " SET factionID = '" + factionID + "' WHERE chunkX = "
-				+ chunkX + " AND chunkZ = " + chunkY + ";");
+		api.executeUpdateAsync("UPDATE " + tableName + " SET factionID = '" + factionID + "' WHERE chunkX = " + chunkX
+				+ " AND chunkZ = " + chunkY + ";");
 	}
-	
-	public List<Block> getSpawnersIn(long chunkX, long chunkY){
+
+	public List<Block> getSpawnersIn(long chunkX, long chunkY) {
 		List<Block> blocks = new ArrayList<Block>();
-		
-		List<String[]> rows = api.getRows("SELECT spawnerLocation FROM "+tableName+" WHERE chunkX = "+chunkX+" AND chunkZ = "+chunkY+";");
-		for (String[] row: rows) {
+
+		List<String[]> rows = api.getRows("SELECT spawnerLocation FROM " + tableName + " WHERE chunkX = " + chunkX
+				+ " AND chunkZ = " + chunkY + ";");
+		for (String[] row : rows) {
 			Location spawnerLocation = WorldUtils.locationFromString(row[0]);
 			blocks.add(spawnerLocation.getBlock());
 		}
-		
+
 		return blocks;
 	}
-	
-	public List<Block> getSpawners(String factionID){
+
+	public List<Block> getSpawners(String factionID) {
 		List<Block> blocks = new ArrayList<Block>();
-		
-		List<String[]> rows = api.getRows("SELECT spawnerLocation FROM "+tableName+" WHERE factionID = '"+factionID+"';");
-		for (String[] row: rows) {
+
+		List<String[]> rows = api
+				.getRows("SELECT spawnerLocation FROM " + tableName + " WHERE factionID = '" + factionID + "';");
+		for (String[] row : rows) {
 			Location spawnerLocation = WorldUtils.locationFromString(row[0]);
 			blocks.add(spawnerLocation.getBlock());
 		}
-		
+
 		return blocks;
 	}
-	
+
 	public void clearSpawnerData(String factionID) {
-		api.executeUpdateAsync("DELETE FROM "+tableName+" WHERE factionID = '"+factionID+"';");
+		api.executeUpdateAsync("DELETE FROM " + tableName + " WHERE factionID = '" + factionID + "';");
 	}
 }

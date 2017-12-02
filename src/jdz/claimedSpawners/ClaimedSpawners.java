@@ -15,10 +15,12 @@ import jdz.claimedSpawners.listeners.SpawnerRemoveListener;
 public class ClaimedSpawners extends JavaPlugin {
 	public static FileLogger spawnerPlaceLog;
 	public static FileLogger spawnerRemoveLog;
+	public static ClaimedSpawners instance;
 	
 	@Override
 	public void onEnable() {
 		spawnerRemoveLog = new FileLogger(this, "RemovedSpawners");
+		instance = this;
 		
 		SpawnerDatabase.init(this);
 		

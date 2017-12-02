@@ -36,7 +36,7 @@ public class SpawnerRemoveListener implements Listener {
 		spawnerBreakLog = new FileLogger(plugin, "BrokenSpawners");
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 	public void onSpawnerBreak(BlockBreakEvent e) {
 
 		if (e.getBlock().getType() != Material.MOB_SPAWNER)
@@ -87,7 +87,7 @@ public class SpawnerRemoveListener implements Listener {
 	}
 
 	
-	@EventHandler
+	@EventHandler(ignoreCancelled = false)
 	public void onTNTPlace(BlockPlaceEvent e) {	
 		if (e.getBlock().getType() != Material.TNT) return;
 		

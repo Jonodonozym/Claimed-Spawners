@@ -1,7 +1,9 @@
 
 package jdz.claimedSpawners.listeners;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
@@ -17,10 +19,12 @@ import com.massivecraft.factions.FLocation;
 import com.massivecraft.factions.FPlayer;
 import com.massivecraft.factions.FPlayers;
 import com.massivecraft.factions.Faction;
+import com.songoda.epicspawners.Spawners.SpawnerChangeEvent;
 
 import jdz.bukkitUtils.fileIO.FileLogger;
 import jdz.bukkitUtils.misc.StringUtils;
 import jdz.bukkitUtils.misc.WorldUtils;
+import jdz.claimedSpawners.ClaimedSpawners;
 import jdz.claimedSpawners.data.SpawnerDatabase;
 
 public class SpawnerPlaceListener implements Listener {
@@ -30,31 +34,44 @@ public class SpawnerPlaceListener implements Listener {
 		spawnerPlaceLog = new FileLogger(plugin, "PlacedSpawners");
 	}
 	
-	@EventHandler(priority = EventPriority.LOW)
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 	public void onSpawnerPlace(BlockPlaceEvent e) {
-		
 		if (e.getBlock().getType() != Material.MOB_SPAWNER) return;
 		
-		FPlayer player = FPlayers.getInstance().getByPlayer(e.getPlayer()); 
-		Faction chunkFaction = Board.getInstance().getFactionAt(new FLocation(e.getBlock()));
+		Location l = e.getBlock().getLocation();
 		
-		if (!e.getPlayer().hasPermission("claimedSpawners.bypass")) {
+		Bukkit.getScheduler().runTaskLaterAsynchronously(ClaimedSpawners.instance, ()->{
 			
-			if (player.getFaction().isWilderness()) {
-				e.getPlayer().sendMessage(ChatColor.RED+"You need a faction to place spawners");
-				e.setCancelled(true);
-				return;
+			if (l.getWorld().getBlockAt(l).getType()  != Material.MOB_SPAWNER) return;
+			
+			FPlayer player = FPlayers.getInstance().getByPlayer(e.getPlayer()); 
+			Faction chunkFaction = Board.getInstance().getFactionAt(new FLocation(e.getBlock()));
+			
+			if (!e.getPlayer().hasPermission("claimedSpawners.bypass")) {
+				
+				if (player.getFaction().isWilderness()) {
+					e.getPlayer().sendMessage(ChatColor.RED+"You need a faction to place spawners");
+					e.setCancelled(true);
+					return;
+				}
+					
+				if (!player.getFaction().equals(chunkFaction)) {
+					e.getPlayer().sendMessage(ChatColor.RED+"You can only place spawners in your faction's claimed land!");
+					e.setCancelled(true);
+					return;
+				}
 			}
 				
-			if (!player.getFaction().equals(chunkFaction)) {
-				e.getPlayer().sendMessage(ChatColor.RED+"You can only place spawners in your faction's claimed land!");
-				e.setCancelled(true);
-				return;
-			}
-		}
+			logPlacement(e.getPlayer(), e.getBlock());
+			SpawnerDatabase.getInstance().addSpawner(chunkFaction.getId(), e.getBlock().getLocation());
 			
-		logPlacement(e.getPlayer(), e.getBlock());
-		SpawnerDatabase.getInstance().addSpawner(chunkFaction.getId(), e.getBlock().getLocation());
+			
+		}, 20);
+	}
+	
+	@EventHandler
+	public void onUpgrade(SpawnerChangeEvent e) {
+		System.out.println(e.getOldMulti());
 	}
 	
 	private void logPlacement(Player player, Block block) {
@@ -66,4 +83,5 @@ public class SpawnerPlaceListener implements Listener {
 		
 		spawnerPlaceLog.log(playerName+" placed a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+location);
 	}
+	
 }
