@@ -34,7 +34,7 @@ public class SpawnerPlaceListener implements Listener {
 		spawnerPlaceLog = new FileLogger(plugin, "PlacedSpawners");
 	}
 	
-	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void onSpawnerPlace(BlockPlaceEvent e) {
 		if (e.getBlock().getType() != Material.MOB_SPAWNER) return;
 		
@@ -62,16 +62,21 @@ public class SpawnerPlaceListener implements Listener {
 				}
 			}
 				
-			logPlacement(e.getPlayer(), e.getBlock());
-			SpawnerDatabase.getInstance().addSpawner(chunkFaction.getId(), e.getBlock().getLocation());
 			
 			
 		}, 20);
 	}
 	
 	@EventHandler
-	public void onUpgrade(SpawnerChangeEvent e) {
-		System.out.println(e.getOldMulti());
+	public void onUpgrade(SpawnerChangeEvent event) {
+		if (event.getOldMulti() == 0) {
+			Faction chunkFaction = Board.getInstance().getFactionAt(new FLocation(event.getSpawner()));
+			SpawnerDatabase.getInstance().addSpawner(chunkFaction.getId(), event.getSpawner().getLocation());
+			logPlacement(event.getPlayer(), event.getSpawner());
+		}
+		
+		else
+			logUpgrade(event);
 	}
 	
 	private void logPlacement(Player player, Block block) {
@@ -82,6 +87,18 @@ public class SpawnerPlaceListener implements Listener {
 		String entityName = cs.getSpawnedType().name().toLowerCase().replaceAll("_", " ");
 		
 		spawnerPlaceLog.log(playerName+" placed a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+location);
+	}
+	
+	private void logUpgrade(SpawnerChangeEvent event) {
+		Block block = event.getSpawner();
+		
+		CreatureSpawner cs = (CreatureSpawner) block.getState();
+		
+		String playerName = event.getPlayer().getName();
+		String location = WorldUtils.locationToString(block.getLocation());
+		String entityName = cs.getSpawnedType().name().toLowerCase().replaceAll("_", " ");
+		
+		spawnerPlaceLog.log(playerName+" upgraded a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+location+" to level "+event.getCurrentMulti());
 	}
 	
 }

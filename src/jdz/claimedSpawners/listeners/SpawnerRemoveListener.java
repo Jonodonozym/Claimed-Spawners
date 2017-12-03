@@ -19,6 +19,8 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.songoda.epicspawners.Spawners.SpawnerChangeEvent;
+
 import jdz.bukkitUtils.fileIO.FileLogger;
 import jdz.bukkitUtils.misc.StringUtils;
 import jdz.bukkitUtils.misc.WorldUtils;
@@ -36,15 +38,28 @@ public class SpawnerRemoveListener implements Listener {
 		spawnerBreakLog = new FileLogger(plugin, "BrokenSpawners");
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
 	public void onSpawnerBreak(BlockBreakEvent e) {
 
 		if (e.getBlock().getType() != Material.MOB_SPAWNER)
 			return;
 		
+		if (e.getPlayer() != null) return;
+		
 		SpawnerDatabase.getInstance().removeSpawner(e.getBlock().getLocation());
 		
 		logBreaking(e.getBlock());
+	}
+	
+	@EventHandler
+	public void onDowngrade(SpawnerChangeEvent event) {
+		if (event.getCurrentMulti() == 0) {
+			SpawnerDatabase.getInstance().removeSpawner(event.getSpawner().getLocation());
+			logBreaking(event.getSpawner());
+		}
+		
+		else
+			logDowngrade(event);
 	}
 
 	private void logBreaking(Block block) {
@@ -84,6 +99,19 @@ public class SpawnerRemoveListener implements Listener {
 		}
 		
 		spawnerBreakLog.log(logString);
+	}
+	
+
+	private void logDowngrade(SpawnerChangeEvent event) {
+		Block block = event.getSpawner();
+		
+		CreatureSpawner cs = (CreatureSpawner) block.getState();
+		
+		String playerName = event.getPlayer().getName();
+		String location = WorldUtils.locationToString(block.getLocation());
+		String entityName = cs.getSpawnedType().name().toLowerCase().replaceAll("_", " ");
+		
+		spawnerBreakLog.log(playerName+" downgraded a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+location+" to level "+event.getCurrentMulti());
 	}
 
 	
