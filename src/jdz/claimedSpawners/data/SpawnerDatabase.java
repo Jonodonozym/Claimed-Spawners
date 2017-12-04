@@ -88,4 +88,12 @@ public class SpawnerDatabase {
 	public void clearSpawnerData(String factionID) {
 		api.executeUpdateAsync("DELETE FROM " + tableName + " WHERE factionID = '" + factionID + "';");
 	}
+
+	public String getOwner(Location location) {
+		try {
+		return api.getRows("SELECT factionID FROM " + tableName + " WHERE spawnerLocation = '"
+				+ WorldUtils.locationToString(location) + "';").get(0)[0];
+		}
+		catch (Exception e) { return null; }
+	}
 }

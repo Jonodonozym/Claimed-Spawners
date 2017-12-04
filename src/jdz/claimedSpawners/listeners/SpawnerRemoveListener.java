@@ -11,14 +11,14 @@ import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.massivecraft.factions.Factions;
 import com.songoda.epicspawners.Spawners.SpawnerChangeEvent;
 
 import jdz.bukkitUtils.fileIO.FileLogger;
@@ -38,113 +38,111 @@ public class SpawnerRemoveListener implements Listener {
 		spawnerBreakLog = new FileLogger(plugin, "BrokenSpawners");
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
-	public void onSpawnerBreak(BlockBreakEvent e) {
-
-		if (e.getBlock().getType() != Material.MOB_SPAWNER)
-			return;
-		
-		if (e.getPlayer() != null) return;
-		
-		SpawnerDatabase.getInstance().removeSpawner(e.getBlock().getLocation());
-		
-		logBreaking(e.getBlock());
+	@EventHandler
+	public void onExplode(EntityExplodeEvent e) {
+		for (Block block : e.blockList()) {
+			if (block.getType() == Material.MOB_SPAWNER) {
+				logTNTed(SpawnerDatabase.getInstance().getOwner(block.getLocation()), block);
+				SpawnerDatabase.getInstance().removeSpawner(block.getLocation());
+			}
+		}
 	}
-	
+
 	@EventHandler
 	public void onDowngrade(SpawnerChangeEvent event) {
-		if (event.getCurrentMulti() == 0) {
-			SpawnerDatabase.getInstance().removeSpawner(event.getSpawner().getLocation());
-			logBreaking(event.getSpawner());
-		}
-		
-		else
+		if (event.getCurrentMulti() < event.getOldMulti()) {
+			if (event.getCurrentMulti() == 0)
+				SpawnerDatabase.getInstance().removeSpawner(event.getSpawner().getLocation());
 			logDowngrade(event);
+		}
 	}
 
-	private void logBreaking(Block block) {
+	private void logTNTed(String factionOwnerID, Block block) {
 		CreatureSpawner cs = (CreatureSpawner) block.getState();
-		
 		String location = WorldUtils.locationToString(block.getLocation());
 		String entityName = cs.getSpawnedType().name().toLowerCase().replaceAll("_", " ");
-		
-		String logString = "A"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+location+" Was broken";
-		
+
+		String logString = "A" + (StringUtils.isVowel(entityName.charAt(0)) ? "" : "n") + " " + entityName
+				+ " spawner at " + location
+				+ (factionOwnerID == null ? " in the wilderness"
+						: " belonging to " + Factions.getInstance().getFactionById(factionOwnerID).getTag())
+				+ " Was TNTed";
+
 		Set<Player> nearbyPlayers = WorldUtils.getNearbyPlayers(block.getLocation(), 256);
 		if (!nearbyPlayers.isEmpty()) {
 			logString += "\nNearby Players:";
-			for (Player player: nearbyPlayers) {
-				
+			for (Player player : nearbyPlayers) {
+
 				String extData = " (";
-				
+
 				if (tntRecentlyPlaced.containsKey(player)) {
 					int tntPlaced = tntRecentlyPlaced.get(player);
 					if (tntPlaced > 0)
-						extData += " x"+tntPlaced+" TNT placed";
+						extData += " x" + tntPlaced + " TNT placed";
 				}
-				
+
 				if (ceggRecentlyPlaced.containsKey(player)) {
 					int ceegPlaced = ceggRecentlyPlaced.get(player);
-						if (ceegPlaced > 0) {
-							if (!extData.equals(" ("))
-								extData += " and ";
-							extData += " x"+ceegPlaced+" Creeper eggs used";
-						}
+					if (ceegPlaced > 0) {
+						if (!extData.equals(" ("))
+							extData += " and ";
+						extData += " x" + ceegPlaced + " Creeper eggs used";
+					}
 				}
-				
-				extData = extData.equals(" (")?"":extData + " in the last 60 seconds)";
-				
-				logString += "\n - "+player.getName()+": "+WorldUtils.locationToString(player.getLocation())+extData;
+
+				extData = extData.equals(" (") ? "" : extData + " in the last 60 seconds)";
+
+				logString += "\n - " + player.getName() + ": " + WorldUtils.locationToString(player.getLocation())
+						+ extData;
 			}
 		}
-		
+
 		spawnerBreakLog.log(logString);
 	}
-	
 
 	private void logDowngrade(SpawnerChangeEvent event) {
 		Block block = event.getSpawner();
-		
+
 		CreatureSpawner cs = (CreatureSpawner) block.getState();
-		
+
 		String playerName = event.getPlayer().getName();
 		String location = WorldUtils.locationToString(block.getLocation());
 		String entityName = cs.getSpawnedType().name().toLowerCase().replaceAll("_", " ");
-		
-		spawnerBreakLog.log(playerName+" downgraded a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+location+" to level "+event.getCurrentMulti());
+
+		spawnerBreakLog.log(playerName + " downgraded a" + (StringUtils.isVowel(entityName.charAt(0)) ? "" : "n") + " "
+				+ entityName + " spawner at " + location + " to level " + event.getCurrentMulti());
 	}
 
-	
 	@EventHandler(ignoreCancelled = false)
-	public void onTNTPlace(BlockPlaceEvent e) {	
-		if (e.getBlock().getType() != Material.TNT) return;
-		
+	public void onTNTPlace(BlockPlaceEvent e) {
+		if (e.getBlock().getType() != Material.TNT)
+			return;
+
 		Player player = e.getPlayer();
-		
+
 		if (!tntRecentlyPlaced.containsKey(player))
 			tntRecentlyPlaced.put(player, 0);
-		tntRecentlyPlaced.put(player, tntRecentlyPlaced.get(player)+1);
-		
-		Bukkit.getScheduler().runTaskLater(plugin, ()->{
-			tntRecentlyPlaced.put(player, tntRecentlyPlaced.get(player)-1);
+		tntRecentlyPlaced.put(player, tntRecentlyPlaced.get(player) + 1);
+
+		Bukkit.getScheduler().runTaskLater(plugin, () -> {
+			tntRecentlyPlaced.put(player, tntRecentlyPlaced.get(player) - 1);
 		}, 1200);
 	}
-	
-	@EventHandler
-    public void onCeggUse(PlayerInteractEvent e) {
-        if (e.getAction() == Action.RIGHT_CLICK_BLOCK
-                && e.getMaterial() == Material.MONSTER_EGG &&
-                e.getItem().getDurability() == 50) {
 
-    		Player player = e.getPlayer();
-    		
-    		if (!ceggRecentlyPlaced.containsKey(player))
-    			ceggRecentlyPlaced.put(player, 0);
-    		ceggRecentlyPlaced.put(player, ceggRecentlyPlaced.get(player)+1);
-    		
-    		Bukkit.getScheduler().runTaskLater(plugin, ()->{
-    			ceggRecentlyPlaced.put(player, ceggRecentlyPlaced.get(player)-1);
-    		}, 1200);
-        }
-    }
+	@EventHandler
+	public void onCeggUse(PlayerInteractEvent e) {
+		if (e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getMaterial() == Material.MONSTER_EGG
+				&& e.getItem().getDurability() == 50) {
+
+			Player player = e.getPlayer();
+
+			if (!ceggRecentlyPlaced.containsKey(player))
+				ceggRecentlyPlaced.put(player, 0);
+			ceggRecentlyPlaced.put(player, ceggRecentlyPlaced.get(player) + 1);
+
+			Bukkit.getScheduler().runTaskLater(plugin, () -> {
+				ceggRecentlyPlaced.put(player, ceggRecentlyPlaced.get(player) - 1);
+			}, 1200);
+		}
+	}
 }

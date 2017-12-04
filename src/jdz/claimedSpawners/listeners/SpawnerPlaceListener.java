@@ -3,7 +3,6 @@ package jdz.claimedSpawners.listeners;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
@@ -38,45 +37,36 @@ public class SpawnerPlaceListener implements Listener {
 	public void onSpawnerPlace(BlockPlaceEvent e) {
 		if (e.getBlock().getType() != Material.MOB_SPAWNER) return;
 		
-		Location l = e.getBlock().getLocation();
+		FPlayer player = FPlayers.getInstance().getByPlayer(e.getPlayer()); 
+		Faction chunkFaction = Board.getInstance().getFactionAt(new FLocation(e.getBlock()));
 		
-		Bukkit.getScheduler().runTaskLaterAsynchronously(ClaimedSpawners.instance, ()->{
+		if (!e.getPlayer().hasPermission("claimedSpawners.bypass")) {
 			
-			if (l.getWorld().getBlockAt(l).getType()  != Material.MOB_SPAWNER) return;
-			
-			FPlayer player = FPlayers.getInstance().getByPlayer(e.getPlayer()); 
-			Faction chunkFaction = Board.getInstance().getFactionAt(new FLocation(e.getBlock()));
-			
-			if (!e.getPlayer().hasPermission("claimedSpawners.bypass")) {
-				
-				if (player.getFaction().isWilderness()) {
-					e.getPlayer().sendMessage(ChatColor.RED+"You need a faction to place spawners");
-					e.setCancelled(true);
-					return;
-				}
-					
-				if (!player.getFaction().equals(chunkFaction)) {
-					e.getPlayer().sendMessage(ChatColor.RED+"You can only place spawners in your faction's claimed land!");
-					e.setCancelled(true);
-					return;
-				}
+			if (player.getFaction().isWilderness()) {
+				e.getPlayer().sendMessage(ChatColor.RED+"You need a faction to place spawners");
+				e.setCancelled(true);
+				return;
 			}
 				
-			
-			
-		}, 20);
+			if (!player.getFaction().equals(chunkFaction)) {
+				e.getPlayer().sendMessage(ChatColor.RED+"You can only place spawners in your faction's claimed land!");
+				e.setCancelled(true);
+				return;
+			}
+		}
+		
+		Bukkit.getScheduler().runTaskLaterAsynchronously(ClaimedSpawners.instance, ()->{
+			if (e.getBlock().getWorld().getBlockAt(e.getBlock().getLocation()).getType() == Material.MOB_SPAWNER) {
+
+				SpawnerDatabase.getInstance().addSpawner(chunkFaction.getId(), e.getBlock().getLocation());
+				logPlacement(e.getPlayer(), e.getBlock());
+			}
+		}, 40L);
 	}
 	
 	@EventHandler
 	public void onUpgrade(SpawnerChangeEvent event) {
-		if (event.getOldMulti() == 0) {
-			Faction chunkFaction = Board.getInstance().getFactionAt(new FLocation(event.getSpawner()));
-			SpawnerDatabase.getInstance().addSpawner(chunkFaction.getId(), event.getSpawner().getLocation());
-			logPlacement(event.getPlayer(), event.getSpawner());
-		}
-		
-		else
-			logUpgrade(event);
+		logUpgrade(event);
 	}
 	
 	private void logPlacement(Player player, Block block) {
