@@ -18,18 +18,21 @@ import com.massivecraft.factions.FLocation;
 import com.massivecraft.factions.FPlayer;
 import com.massivecraft.factions.FPlayers;
 import com.massivecraft.factions.Faction;
-import com.songoda.epicspawners.Spawners.SpawnerChangeEvent;
 
 import jdz.bukkitUtils.fileIO.FileLogger;
 import jdz.bukkitUtils.misc.StringUtils;
 import jdz.bukkitUtils.misc.WorldUtils;
 import jdz.claimedSpawners.ClaimedSpawners;
-import jdz.claimedSpawners.data.SpawnerDatabase;
+import jdz.claimedSpawners.data.SpawnerManager;
+import lombok.Getter;
 
 public class SpawnerPlaceListener implements Listener {
-	private final FileLogger spawnerPlaceLog;
+
+	@Getter private static final SpawnerPlaceListener instance = new SpawnerPlaceListener(ClaimedSpawners.instance);
 	
-	public SpawnerPlaceListener(JavaPlugin plugin) {
+	@Getter private final FileLogger spawnerPlaceLog;
+	
+	private SpawnerPlaceListener(JavaPlugin plugin) {
 		spawnerPlaceLog = new FileLogger(plugin, "PlacedSpawners");
 	}
 	
@@ -58,37 +61,19 @@ public class SpawnerPlaceListener implements Listener {
 		Bukkit.getScheduler().runTaskLaterAsynchronously(ClaimedSpawners.instance, ()->{
 			if (e.getBlock().getWorld().getBlockAt(e.getBlock().getLocation()).getType() == Material.MOB_SPAWNER) {
 
-				SpawnerDatabase.getInstance().addSpawner(chunkFaction.getId(), e.getBlock().getLocation());
+				SpawnerManager.getInstance().addSpawner(chunkFaction, e.getBlock().getLocation());
 				logPlacement(e.getPlayer(), e.getBlock());
 			}
 		}, 40L);
-	}
-	
-	@EventHandler
-	public void onUpgrade(SpawnerChangeEvent event) {
-		logUpgrade(event);
 	}
 	
 	private void logPlacement(Player player, Block block) {
 		CreatureSpawner cs = (CreatureSpawner) block.getState();
 		
 		String playerName = player.getName();
-		String location = WorldUtils.locationToString(block.getLocation());
+		String location = WorldUtils.locationToLegibleString(block.getLocation());
 		String entityName = cs.getSpawnedType().name().toLowerCase().replaceAll("_", " ");
 		
 		spawnerPlaceLog.log(playerName+" placed a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+location);
-	}
-	
-	private void logUpgrade(SpawnerChangeEvent event) {
-		Block block = event.getSpawner();
-		
-		CreatureSpawner cs = (CreatureSpawner) block.getState();
-		
-		String playerName = event.getPlayer().getName();
-		String location = WorldUtils.locationToString(block.getLocation());
-		String entityName = cs.getSpawnedType().name().toLowerCase().replaceAll("_", " ");
-		
-		spawnerPlaceLog.log(playerName+" upgraded a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+location+" to level "+event.getCurrentMulti());
-	}
-	
+	}	
 }

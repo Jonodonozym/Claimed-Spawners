@@ -6,7 +6,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import jdz.bukkitUtils.fileIO.FileLogger;
-import jdz.claimedSpawners.data.SpawnerDatabase;
+import jdz.claimedSpawners.data.SpawnerManager;
+import jdz.claimedSpawners.hooks.EpicSpawnersHook;
 import jdz.claimedSpawners.listeners.FactionChunksChangeListener;
 import jdz.claimedSpawners.listeners.FactionDisbandListener;
 import jdz.claimedSpawners.listeners.SpawnerPlaceListener;
@@ -16,18 +17,24 @@ public class ClaimedSpawners extends JavaPlugin {
 	public static FileLogger spawnerPlaceLog;
 	public static FileLogger spawnerRemoveLog;
 	public static ClaimedSpawners instance;
+	public static boolean epicSpawnersHooked = false;
 	
 	@Override
 	public void onEnable() {
 		spawnerRemoveLog = new FileLogger(this, "RemovedSpawners");
 		instance = this;
 		
-		SpawnerDatabase.init(this);
+		SpawnerManager.getInstance();
 		
 		PluginManager pm = Bukkit.getPluginManager();
 		pm.registerEvents(new FactionChunksChangeListener(), this);
 		pm.registerEvents(new FactionDisbandListener(), this);
-		pm.registerEvents(new SpawnerPlaceListener(this), this);
-		pm.registerEvents(new SpawnerRemoveListener(this), this);
+		pm.registerEvents(SpawnerPlaceListener.getInstance(), this);
+		pm.registerEvents(SpawnerRemoveListener.getInstance(), this);
+		
+		if (pm.isPluginEnabled("EpicSpawners")) {
+			pm.registerEvents(EpicSpawnersHook.getInstance(), this);
+			epicSpawnersHooked = true;
+		}
 	}
 }

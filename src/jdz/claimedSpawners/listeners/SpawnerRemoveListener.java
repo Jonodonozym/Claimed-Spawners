@@ -13,59 +13,77 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.massivecraft.factions.Factions;
-import com.songoda.epicspawners.Spawners.SpawnerChangeEvent;
+import com.massivecraft.factions.Faction;
 
 import jdz.bukkitUtils.fileIO.FileLogger;
 import jdz.bukkitUtils.misc.StringUtils;
 import jdz.bukkitUtils.misc.WorldUtils;
-import jdz.claimedSpawners.data.SpawnerDatabase;
+import jdz.claimedSpawners.ClaimedSpawners;
+import jdz.claimedSpawners.data.SpawnerManager;
+import lombok.Getter;
 
 public class SpawnerRemoveListener implements Listener {
+	@Getter private static final SpawnerRemoveListener instance = new SpawnerRemoveListener(ClaimedSpawners.instance);
+	
 	private final Map<Player, Integer> tntRecentlyPlaced = new HashMap<Player, Integer>();
 	private final Map<Player, Integer> ceggRecentlyPlaced = new HashMap<Player, Integer>();
 
-	private final FileLogger spawnerBreakLog;
+	@Getter private final FileLogger spawnerBreakLog;
 	private final JavaPlugin plugin;
 
-	public SpawnerRemoveListener(JavaPlugin plugin) {
+	private SpawnerRemoveListener(JavaPlugin plugin) {
 		this.plugin = plugin;
 		spawnerBreakLog = new FileLogger(plugin, "BrokenSpawners");
+	}
+
+	@EventHandler
+	public void onMine(BlockBreakEvent e) {
+		if (e.getBlock().getType() != Material.MOB_SPAWNER)
+			return;
+		
+		if (Bukkit.getPluginManager().isPluginEnabled("EpicSpawners"))
+			return;
+		
+		Bukkit.getScheduler().runTaskLaterAsynchronously(ClaimedSpawners.instance, ()->{
+			if (e.getBlock().getWorld().getBlockAt(e.getBlock().getLocation()).getType() != Material.MOB_SPAWNER) {
+
+				SpawnerManager.getInstance().removeSpawner(e.getBlock().getLocation());
+				logBroken(e.getPlayer(), e.getBlock());
+			}
+		}, 40L);
+	}
+	
+	@SuppressWarnings("deprecation")
+	private void logBroken(Player player, Block block) {
+		String entityName = ((CreatureSpawner)block).getCreatureTypeName();
+		spawnerBreakLog.log(player.getName()+" mined a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+WorldUtils.locationToLegibleString(block.getLocation()));
 	}
 
 	@EventHandler
 	public void onExplode(EntityExplodeEvent e) {
 		for (Block block : e.blockList()) {
 			if (block.getType() == Material.MOB_SPAWNER) {
-				logTNTed(SpawnerDatabase.getInstance().getOwner(block.getLocation()), block);
-				SpawnerDatabase.getInstance().removeSpawner(block.getLocation());
+				logTNTed(SpawnerManager.getInstance().getOwner(block.getLocation()), block);
+				SpawnerManager.getInstance().removeSpawner(block.getLocation());
 			}
 		}
 	}
 
-	@EventHandler
-	public void onDowngrade(SpawnerChangeEvent event) {
-		if (event.getCurrentMulti() < event.getOldMulti()) {
-			if (event.getCurrentMulti() == 0)
-				SpawnerDatabase.getInstance().removeSpawner(event.getSpawner().getLocation());
-			logDowngrade(event);
-		}
-	}
-
-	private void logTNTed(String factionOwnerID, Block block) {
+	private void logTNTed(Faction faction, Block block) {
 		CreatureSpawner cs = (CreatureSpawner) block.getState();
-		String location = WorldUtils.locationToString(block.getLocation());
+		String location = WorldUtils.locationToLegibleString(block.getLocation());
 		String entityName = cs.getSpawnedType().name().toLowerCase().replaceAll("_", " ");
 
 		String logString = "A" + (StringUtils.isVowel(entityName.charAt(0)) ? "" : "n") + " " + entityName
 				+ " spawner at " + location
-				+ (factionOwnerID == null ? " in the wilderness"
-						: " belonging to " + Factions.getInstance().getFactionById(factionOwnerID).getTag())
+				+ (faction == null || faction.isWilderness() ? " in the wilderness"
+						: " belonging to " + faction.getTag())
 				+ " Was TNTed";
 
 		Set<Player> nearbyPlayers = WorldUtils.getNearbyPlayers(block.getLocation(), 256);
@@ -92,25 +110,12 @@ public class SpawnerRemoveListener implements Listener {
 
 				extData = extData.equals(" (") ? "" : extData + " in the last 60 seconds)";
 
-				logString += "\n - " + player.getName() + ": " + WorldUtils.locationToString(player.getLocation())
+				logString += "\n - " + player.getName() + ": " + WorldUtils.locationToLegibleString(player.getLocation())
 						+ extData;
 			}
 		}
 
 		spawnerBreakLog.log(logString);
-	}
-
-	private void logDowngrade(SpawnerChangeEvent event) {
-		Block block = event.getSpawner();
-
-		CreatureSpawner cs = (CreatureSpawner) block.getState();
-
-		String playerName = event.getPlayer().getName();
-		String location = WorldUtils.locationToString(block.getLocation());
-		String entityName = cs.getSpawnedType().name().toLowerCase().replaceAll("_", " ");
-
-		spawnerBreakLog.log(playerName + " downgraded a" + (StringUtils.isVowel(entityName.charAt(0)) ? "" : "n") + " "
-				+ entityName + " spawner at " + location + " to level " + event.getCurrentMulti());
 	}
 
 	@EventHandler(ignoreCancelled = false)
