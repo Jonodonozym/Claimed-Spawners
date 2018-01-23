@@ -20,7 +20,7 @@ import jdz.claimedSpawners.ClaimedSpawners;
 import lombok.Getter;
 
 class SpawnerDatabase extends Database{
-	@Getter private static SpawnerDatabase instance = new SpawnerDatabase(ClaimedSpawners.instance);
+	@Getter private static final SpawnerDatabase instance = new SpawnerDatabase(ClaimedSpawners.instance);
 
 	private static final String tableName = "ClaimedSpawnersDatabase";
 	private static final SqlColumn[] tableColumns = new SqlColumn[] {
@@ -31,7 +31,7 @@ class SpawnerDatabase extends Database{
 	private SpawnerDatabase(JavaPlugin plugin) {
 		super(plugin);
 		api.runOnConnect(() -> {
-			instance.api.addTable(tableName, tableColumns);
+			api.addTable(tableName, tableColumns);
 		});
 	}
 
