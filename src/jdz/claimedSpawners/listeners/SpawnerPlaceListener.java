@@ -13,18 +13,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.massivecraft.factions.Board;
-import com.massivecraft.factions.FLocation;
-import com.massivecraft.factions.FPlayer;
-import com.massivecraft.factions.FPlayers;
-import com.massivecraft.factions.Faction;
-
 import jdz.bukkitUtils.fileIO.FileLogger;
 import jdz.bukkitUtils.misc.StringUtils;
 import jdz.bukkitUtils.misc.WorldUtils;
 import jdz.claimedSpawners.ClaimedSpawners;
 import jdz.claimedSpawners.data.SpawnerManager;
 import lombok.Getter;
+import net.redstoneore.legacyfactions.entity.Board;
+import net.redstoneore.legacyfactions.entity.FPlayer;
+import net.redstoneore.legacyfactions.entity.FPlayerColl;
+import net.redstoneore.legacyfactions.entity.Faction;
+import net.redstoneore.legacyfactions.locality.Locality;
 
 public class SpawnerPlaceListener implements Listener {
 
@@ -40,8 +39,8 @@ public class SpawnerPlaceListener implements Listener {
 	public void onSpawnerPlace(BlockPlaceEvent e) {
 		if (e.getBlock().getType() != Material.MOB_SPAWNER) return;
 		
-		FPlayer player = FPlayers.getInstance().getByPlayer(e.getPlayer()); 
-		Faction chunkFaction = Board.getInstance().getFactionAt(new FLocation(e.getBlock()));
+		FPlayer player = FPlayerColl.getUnsafeInstance().getByPlayer(e.getPlayer()); 
+		Faction chunkFaction = Board.get().getFactionAt(Locality.of(e.getBlock()));
 		
 		if (!e.getPlayer().hasPermission("claimedSpawners.bypass")) {
 			

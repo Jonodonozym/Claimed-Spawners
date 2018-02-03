@@ -9,15 +9,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.massivecraft.factions.Faction;
-import com.massivecraft.factions.Factions;
-
 import jdz.bukkitUtils.misc.WorldUtils;
 import jdz.bukkitUtils.sql.Database;
 import jdz.bukkitUtils.sql.SqlColumn;
 import jdz.bukkitUtils.sql.SqlColumnType;
 import jdz.claimedSpawners.ClaimedSpawners;
 import lombok.Getter;
+import net.redstoneore.legacyfactions.entity.Faction;
+import net.redstoneore.legacyfactions.entity.FactionColl;
 
 class SpawnerDatabase extends Database{
 	@Getter private static final SpawnerDatabase instance = new SpawnerDatabase(ClaimedSpawners.instance);
@@ -60,7 +59,7 @@ class SpawnerDatabase extends Database{
 				.getRows("SELECT factionID, spawnerLocation FROM " + tableName + ";");
 		for (String[] row : rows) {
 			Location location = WorldUtils.locationFromString(row[1]);
-			Faction faction = Factions.getInstance().getFactionById(row[0]);
+			Faction faction = FactionColl.get().getFactionById(row[0]);
 			spawners.add(new ClaimedSpawner(faction, location));
 		}
 

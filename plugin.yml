@@ -4,7 +4,7 @@ version: 1.0
 author: Jonodonozym
 description: Prevents spawners from being placed in unclaimed land
 softdepend: [EpicSpawners]
-depend: [JBU,Factions]
+depend: [JBU,LegacyFactions]
 
 permissions:
   claimedspawners.bypass:

@@ -3,10 +3,9 @@ package jdz.claimedSpawners.data;
 
 import org.bukkit.Location;
 
-import com.massivecraft.factions.Faction;
-
 import lombok.Data;
 import lombok.NonNull;
+import net.redstoneore.legacyfactions.entity.Faction;
 
 @Data
 public class ClaimedSpawner {

@@ -6,10 +6,9 @@ import java.util.Set;
 
 import org.bukkit.Location;
 
-import com.massivecraft.factions.Faction;
-import com.massivecraft.factions.Factions;
-
 import lombok.Getter;
+import net.redstoneore.legacyfactions.entity.Faction;
+import net.redstoneore.legacyfactions.entity.FactionColl;
 
 public class SpawnerManager {
 	@Getter private static final SpawnerManager instance = new SpawnerManager();
@@ -58,7 +57,7 @@ public class SpawnerManager {
 		for (ClaimedSpawner spawner: spawners)
 			if (spawner.getLocation().equals(location))
 				return spawner.getFaction();
-		return Factions.getInstance().getWilderness();
+		return FactionColl.get().getWilderness();
 	}
 
 	public void removeSpawner(Location location) {

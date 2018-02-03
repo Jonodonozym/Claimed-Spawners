@@ -1,54 +1,46 @@
 package jdz.claimedSpawners.listeners;
 
-import java.util.Iterator;
 import java.util.Set;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
-import com.massivecraft.factions.event.LandClaimEvent;
-import com.massivecraft.factions.event.LandUnclaimAllEvent;
-import com.massivecraft.factions.event.LandUnclaimEvent;
-
-import jdz.bukkitUtils.misc.WorldUtils;
 import jdz.claimedSpawners.data.ClaimedSpawner;
 import jdz.claimedSpawners.data.SpawnerManager;
+import net.redstoneore.legacyfactions.FLocation;
+import net.redstoneore.legacyfactions.entity.FactionColl;
+import net.redstoneore.legacyfactions.event.EventFactionsLandChange;
 
 public class FactionChunksChangeListener implements Listener{
 
-	
-	@EventHandler
-	public void onLandUnclaim(LandUnclaimEvent e) {
-		Set<ClaimedSpawner> spawners = SpawnerManager.getInstance().getSpawnersIn(e.getLocation().getX(), e.getLocation().getZ());
-		if (!spawners.isEmpty()) {
-			Player player = e.getfPlayer().getPlayer();
-			player.sendMessage(ChatColor.RED+"Cannot unclaim land while there are spawners in it!");
-			e.setCancelled(true);
-		}
-	}
-	
-	@EventHandler
-	public void onLandUnclaimAll(LandUnclaimAllEvent e) {
-		Set<ClaimedSpawner> spawners = SpawnerManager.getInstance().getByFaction(e.getFaction());
-		if (!spawners.isEmpty()) {
-			Player player = e.getfPlayer().getPlayer();
-			player.sendMessage(ChatColor.RED+"Cannot unclaim land while there are spawners in it!");
-			
-			Iterator<ClaimedSpawner> iterator = spawners.iterator();
-			for (int i=0; i<Math.min(spawners.size(), 5); i++)
-				player.sendMessage(ChatColor.RED+"Spawner at "+WorldUtils.locationToString(iterator.next().getLocation()));
-			
-			if (spawners.size() > 5)
-				player.sendMessage(ChatColor.RED+"And "+(spawners.size()-5)+" more...");
-			e.setCancelled(true);
+
+	// unclaim
+	@SuppressWarnings("deprecation")
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onLandUnclaim(EventFactionsLandChange e) {
+		if (!e.getTransactions().containsKey(FactionColl.get().getWilderness()))
 			return;
+		
+		for (FLocation location: e.getTransactions().keySet()) {
+			if (!e.getTransactions().get(location).equals(FactionColl.get().getWilderness()))
+				continue;
+			
+			Set<ClaimedSpawner> spawners = SpawnerManager.getInstance().getSpawnersIn(location.getChunk().getX(), location.getChunk().getZ());
+			if (!spawners.isEmpty()) {
+				Player player = e.getFPlayer().getPlayer();
+				player.sendMessage(ChatColor.RED+"Cannot unclaim chunk "+location.getChunk().getX()+","+location.getChunk().getZ()+" while there are spawners in it!");
+				e.setCancelled(true);
+			}
 		}
 	}
-	
-	@EventHandler
-	public void onLandClaim(LandClaimEvent e) {
-		SpawnerManager.getInstance().setChunkFaction(e.getFaction(), e.getLocation().getX(), e.getLocation().getZ());
+
+	@SuppressWarnings("deprecation")
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	public void onLandClaim(EventFactionsLandChange e) {
+		for (FLocation l: e.getTransactions().keySet())
+			SpawnerManager.getInstance().setChunkFaction(e.getTransactions().get(l), l.getChunk().getX(), l.getChunk().getZ());
 	}
 }

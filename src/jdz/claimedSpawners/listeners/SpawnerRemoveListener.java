@@ -19,14 +19,13 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.massivecraft.factions.Faction;
-
 import jdz.bukkitUtils.fileIO.FileLogger;
 import jdz.bukkitUtils.misc.StringUtils;
 import jdz.bukkitUtils.misc.WorldUtils;
 import jdz.claimedSpawners.ClaimedSpawners;
 import jdz.claimedSpawners.data.SpawnerManager;
 import lombok.Getter;
+import net.redstoneore.legacyfactions.entity.Faction;
 
 public class SpawnerRemoveListener implements Listener {
 	@Getter private static final SpawnerRemoveListener instance = new SpawnerRemoveListener(ClaimedSpawners.instance);
