@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.CreatureSpawner;
@@ -42,6 +43,7 @@ public class SpawnerRemoveListener implements Listener {
 	}
 
 	@EventHandler
+	@SuppressWarnings("deprecation")
 	public void onMine(BlockBreakEvent e) {
 		if (e.getBlock().getType() != Material.MOB_SPAWNER)
 			return;
@@ -49,19 +51,17 @@ public class SpawnerRemoveListener implements Listener {
 		if (Bukkit.getPluginManager().isPluginEnabled("EpicSpawners"))
 			return;
 		
+		String entity = ((CreatureSpawner)e.getBlock()).getCreatureTypeName();
 		Bukkit.getScheduler().runTaskLaterAsynchronously(ClaimedSpawners.instance, ()->{
 			if (e.getBlock().getWorld().getBlockAt(e.getBlock().getLocation()).getType() != Material.MOB_SPAWNER) {
-
 				SpawnerManager.getInstance().removeSpawner(e.getBlock().getLocation());
-				logBroken(e.getPlayer(), e.getBlock());
+				logBroken(e.getPlayer(), entity, e.getBlock().getLocation());
 			}
 		}, 40L);
 	}
 	
-	@SuppressWarnings("deprecation")
-	private void logBroken(Player player, Block block) {
-		String entityName = ((CreatureSpawner)block).getCreatureTypeName();
-		spawnerBreakLog.log(player.getName()+" mined a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+WorldUtils.locationToLegibleString(block.getLocation()));
+	private void logBroken(Player player, String entityName, Location loc) {
+		spawnerBreakLog.log(player.getName()+" mined a"+(StringUtils.isVowel(entityName.charAt(0))?"":"n")+" "+entityName+" spawner at "+WorldUtils.locationToLegibleString(loc));
 	}
 
 	@EventHandler
