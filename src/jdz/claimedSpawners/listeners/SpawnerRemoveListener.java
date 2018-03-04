@@ -52,7 +52,7 @@ public class SpawnerRemoveListener implements Listener {
 		if (Bukkit.getPluginManager().isPluginEnabled("EpicSpawners"))
 			return;
 		
-		String entityName = ((CreatureSpawner)e.getBlock()).getCreatureTypeName();
+		String entityName = ((CreatureSpawner)e.getBlock().getState()).getCreatureTypeName();
 		Bukkit.getScheduler().runTaskLaterAsynchronously(ClaimedSpawners.instance, ()->{
 			if (e.getBlock().getWorld().getBlockAt(e.getBlock().getLocation()).getType() != Material.MOB_SPAWNER) {
 
