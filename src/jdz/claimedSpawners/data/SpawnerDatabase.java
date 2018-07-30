@@ -13,10 +13,10 @@ import com.massivecraft.factions.Faction;
 import com.massivecraft.factions.Factions;
 
 import jdz.bukkitUtils.misc.WorldUtils;
-import jdz.bukkitUtils.sql.SqlColumn;
-import jdz.bukkitUtils.sql.SqlColumnType;
+import jdz.bukkitUtils.sql.SQLColumn;
+import jdz.bukkitUtils.sql.SQLColumnType;
 import jdz.bukkitUtils.sql.SqlDatabase;
-import jdz.bukkitUtils.sql.SqlRow;
+import jdz.bukkitUtils.sql.SQLRow;
 import jdz.claimedSpawners.ClaimedSpawners;
 import lombok.Getter;
 
@@ -24,10 +24,10 @@ class SpawnerDatabase extends SqlDatabase{
 	@Getter private static final SpawnerDatabase instance = new SpawnerDatabase(ClaimedSpawners.instance);
 
 	private static final String tableName = "ClaimedSpawnersDatabase";
-	private static final SqlColumn[] tableColumns = new SqlColumn[] {
-			new SqlColumn("FactionID", SqlColumnType.STRING_128),
-			new SqlColumn("SpawnerLocation", SqlColumnType.STRING_128), new SqlColumn("ChunkX", SqlColumnType.LONG),
-			new SqlColumn("ChunkZ", SqlColumnType.INT_4_BYTE) };
+	private static final SQLColumn[] tableColumns = new SQLColumn[] {
+			new SQLColumn("FactionID", SQLColumnType.STRING_128),
+			new SQLColumn("SpawnerLocation", SQLColumnType.STRING_128), new SQLColumn("ChunkX", SQLColumnType.LONG),
+			new SQLColumn("ChunkZ", SQLColumnType.INT_4_BYTE) };
 
 	private SpawnerDatabase(JavaPlugin plugin) {
 		super(plugin);
@@ -40,7 +40,7 @@ class SpawnerDatabase extends SqlDatabase{
 		Bukkit.getScheduler().runTaskAsynchronously(ClaimedSpawners.instance, () -> {
 			String locationStr = WorldUtils.locationToString(spawner.getLocation());
 
-			List<SqlRow> result = query("SELECT factionID FROM " + tableName + " WHERE spawnerLocation = '" + locationStr + "';");
+			List<SQLRow> result = query("SELECT factionID FROM " + tableName + " WHERE spawnerLocation = '" + locationStr + "';");
 			if (result.isEmpty())
 				updateAsync("INSERT INTO " + tableName + " " + "(factionID,spawnerLocation, chunkX, chunkZ) "
 						+ "VALUES('" + spawner.getFaction().getId() + "','" + locationStr + "'," + spawner.getChunkX()
@@ -56,8 +56,8 @@ class SpawnerDatabase extends SqlDatabase{
 	public Set<ClaimedSpawner> getAllSpawners() {
 		Set<ClaimedSpawner> spawners = new HashSet<ClaimedSpawner>();
 
-		List<SqlRow> rows = query("SELECT factionID, spawnerLocation FROM " + tableName + ";");
-		for (SqlRow row : rows) {
+		List<SQLRow> rows = query("SELECT factionID, spawnerLocation FROM " + tableName + ";");
+		for (SQLRow row : rows) {
 			Location location = WorldUtils.locationFromString(row.get(1));
 			Faction faction = Factions.getInstance().getFactionById(row.get(0));
 			spawners.add(new ClaimedSpawner(faction, location));
